@@ -17,8 +17,8 @@ export default function ProductCard({ p, lang, t, symbol, onOpen, onAdd }) {
           <span className="text-lg leading-snug text-olive">{name}</span>
         </button>
         <p className={`text-sm text-neutral-500 line-clamp-2 ${lang === "ar" ? "text-right" : ""}`}>{desc}</p>
-        <div className="mt-auto pt-2 flex items-center justify-between gap-2">
-          <div className="flex items-baseline gap-2">
+        <div className="mt-auto pt-2 flex flex-col gap-2">
+          <div className="flex items-baseline gap-2 flex-wrap">
             {p.salePrice ? (
               <>
                 <span className="font-semibold text-olive">{fmt(p.salePrice, symbol)}</span>
@@ -31,7 +31,7 @@ export default function ProductCard({ p, lang, t, symbol, onOpen, onAdd }) {
           <button
             disabled={outOfStock}
             onClick={() => onAdd(p)}
-            className="text-xs px-3 py-2 rounded-full bg-olive text-white hover:bg-olive-light disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full whitespace-nowrap text-xs px-3 py-2 rounded-full bg-olive text-white hover:bg-olive-light disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {outOfStock ? t.outOfStock : t.addToCart}
           </button>
