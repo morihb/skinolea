@@ -87,12 +87,17 @@ router.delete("/products/:id", async (req, res) => {
 
 router.post("/products/import", upload.single("file"), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded." });
-  let rows;
+  let rows = [];
   try {
     const wb = XLSX.read(req.file.buffer, { type: "buffer" });
-    const sheet = wb.Sheets[wb.SheetNames[0]];
-    const raw = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-    rows = raw.map(normalizeRow).filter((r) => r.name_en && r.price);
+    // Don't assume the first sheet has the data — a file can have notes/legend
+    // tabs in any order. Check every sheet and use whichever one actually
+    // yields valid product rows.
+    for (const sheetName of wb.SheetNames) {
+      const raw = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: "" });
+      const candidate = raw.map(normalizeRow).filter((r) => r.name_en && r.price);
+      if (candidate.length > rows.length) rows = candidate;
+    }
   } catch (e) {
     return res.status(400).json({ error: "Couldn't read that file. Please upload a valid Excel or CSV file." });
   }
