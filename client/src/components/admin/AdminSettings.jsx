@@ -5,16 +5,22 @@ import FormField from "../FormField";
 export default function AdminSettings({ t, settings, onSaved }) {
   const [form, setForm] = useState({ ...settings });
   const [saved, setSaved] = useState(false);
+  const [saveErr, setSaveErr] = useState("");
   const [pw, setPw] = useState({ currentPassword: "", newPassword: "" });
   const [pwMsg, setPwMsg] = useState("");
   const [pwErr, setPwErr] = useState("");
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
   const submit = async () => {
-    await api.admin.updateSettings(form);
-    onSaved(form);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setSaveErr("");
+    try {
+      await api.admin.updateSettings(form);
+      onSaved(form);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (e) {
+      setSaveErr(e.message || "Could not save settings. Please try again.");
+    }
   };
 
   const changePassword = async () => {
@@ -40,6 +46,7 @@ export default function AdminSettings({ t, settings, onSaved }) {
           <FormField label={t.currencySymbolLbl} value={form.currencySymbol || ""} onChange={set("currencySymbol")} />
         </div>
         {saved && <p className="text-xs text-green-600">{t.settingsSaved}</p>}
+        {saveErr && <p className="text-xs text-red-500">{saveErr}</p>}
         <button onClick={submit} className="bg-olive text-white hover:bg-olive-light rounded-full py-2 text-sm self-start px-6">{t.save}</button>
       </div>
 
