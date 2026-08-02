@@ -81,7 +81,7 @@ export default function Storefront() {
 
   const cartCount = cart.reduce((s, c) => s + c.qty, 0);
 
-  const checkout = async (items, total) => {
+  const checkout = (items, total) => {
     if (!settings) return;
     const header = lang === "ar" ? `طلب جديد - ${settings.shopNameAr}` : `New order - ${settings.shopNameEn}`;
     const lines = items.map((i) => {
@@ -91,24 +91,28 @@ export default function Storefront() {
     });
     const totalLine = `${t.total || (lang === "ar" ? "الإجمالي" : "Total")}: ${settings.currencySymbol}${total.toFixed(2)}`;
     const message = [header, "------------------------", ...lines, "------------------------", totalLine].join("\n");
+    const url = `https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(message)}`;
 
-    try {
-      await api.postOrder({
-        items: items.map((i) => ({
-          name: lang === "ar" ? i.product.name_ar || i.product.name_en : i.product.name_en,
-          qty: i.qty,
-          price: i.product.salePrice || i.product.price,
-        })),
-        total,
-        lang,
-      });
-    } catch (e) {
-      // Even if logging the order fails, don't block the customer from reaching WhatsApp.
-      console.error(e);
-    }
+    // Navigate to WhatsApp immediately, in the same tap that triggered this
+    // handler. Mobile browsers (Safari especially) block window.open/navigation
+    // that happens after any await — even a fast one — so this must come first,
+    // before any network request, or the redirect can silently fail on phones.
+    window.location.href = url;
+
     setCart([]);
     setCartOpen(false);
-    window.open(`https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(message)}`, "_blank");
+
+    // Best-effort order log; runs in the background and never blocks or
+    // delays the redirect above.
+    api.postOrder({
+      items: items.map((i) => ({
+        name: lang === "ar" ? i.product.name_ar || i.product.name_en : i.product.name_en,
+        qty: i.qty,
+        price: i.product.salePrice || i.product.price,
+      })),
+      total,
+      lang,
+    }).catch((e) => console.error(e));
   };
 
   if (!loaded || !settings) {
